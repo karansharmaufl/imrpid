@@ -1,2 +1,3 @@
 config.py
-**/*.pyc
+data_helpers.pyc
+config.pyc
