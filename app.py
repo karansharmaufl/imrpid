@@ -1,11 +1,11 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import config
 import boto3
 from botocore.exceptions import ClientError
 import time
 import calendar
 import data_helpers
-
+import aws_helpers
 app = Flask(__name__)
 
 
@@ -26,43 +26,46 @@ def login():
     return "IMPLEMENT LOGIN API"
 
 # The route() decorator to binds a function to a URL.
-@app.route("/upload", methods = ['POST'])
+@app.route("/upload", methods = ['GET','POST'])
 def upload():
-    file_upload = request.files['file']
-    file_name = file_upload.filename
-    file_key = str(calendar.timegm(time.gmtime())) + '_' +file_name
-    try:
-        #print "DEBUG HERE"
-        s3_client = boto3.client('s3', aws_access_key_id=config.aws_access_key_id, aws_secret_access_key=config.aws_secret_access_key)
-        #print "CLIENT CREATED SUCESSFULLY"
-        #print s3_client
-    except ClientError as ce:
-        cerror_message = ce.response['Error']['Message']
-        print "ERROR: "+cerror_message
-    
-    try:
-        s3_client.upload_fileobj(file_upload,config.bucket_name,file_key)
-        #time.sleep(10)
-        samp_response = s3_client.head_object(Bucket=config.bucket_name, Key=file_key)
-        res_json = data_helpers.create_json(samp_response)
-        #print "RESPONSE_HERE"
-        #print str(samp_response)
-    
-    except Exception as e:
-        print "EXCEPTION OCCURED"
-        print e
+    s3_client = aws_helpers.init_botoclient()
+    obj_res = ''
+    if request.method == 'POST':
+        file_upload = request.files['file']
+        file_name = file_upload.filename
+        file_key = str(calendar.timegm(time.gmtime())) + '_' +file_name
+        
+        try:
+            s3_client.upload_fileobj(file_upload,config.bucket_name,file_key)
+            file_url = '{}/{}/{}'.format(s3_client.meta.endpoint_url, config.bucket_name, file_key)
 
-    
-    return res_json
+            print "file_url here:  "
+            print file_url
+            
+            samp_response = s3_client.head_object(Bucket=config.bucket_name, Key=file_key)
 
+        # THE METHOD CAN BE USED LATER ---- USING JSONIFY INSTEAD
+        #res_json = data_helpers.create_json(samp_response)
+        except Exception as e:
+            print "EXCEPTION OCCURED"
+            print e
+
+        obj_res=jsonify(samp_response)
+
+    else:
+        print "INIT GET ALL FILES"
+        all_files = s3_client.
+        obj_res = 'IN GET METHOD'
+        
+    
+    return obj_res
+            
 
 
 # The route() decorator to binds a function to a URL.
 @app.route("/alluploads")
 def alluploads():
     return "IMPLEMENT ALLUPLOADS API"
-
-
 
 if __name__ == '__main__':
     app.run(debug = True)

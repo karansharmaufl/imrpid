@@ -1,5 +1,7 @@
 import json
 import datetime
+import boto3
+
 
 def create_json(obj_dict):
     print "DICT HERE"
@@ -21,3 +23,8 @@ def datetime_handler(x):
     if isinstance(x, datetime.datetime):
         return x.isoformat()
     raise TypeError("Unknown type")
+    
+
+# THIS FUNCTION IS TO RETURN ENDPOINT URL
+# def get_url(s3_client):
+#     url = '{}/{}/{}'.format(s3_client.meta.endpoint_url,)
